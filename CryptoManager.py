@@ -27,7 +27,7 @@ class CryptoManager:
             if self.DEFAULT_PLAINTEXT == self.DecryptAES256(cipher_text, aes_key, salt):
                 new_cipher_text, salt = self.EncryptAES256(self.DEFAULT_PLAINTEXT, aes_key)
                 
-                profile_data['profile']['secrets']['test_text']['text'] = new_cipher_text.hex()
+                profile_data['profile']['secrets']['test_text']['cipher'] = new_cipher_text.hex()
                 profile_data['profile']['secrets']['test_text']['salt'] = salt
                 return True, profile_data
             else:

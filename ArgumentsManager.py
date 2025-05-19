@@ -13,9 +13,9 @@ class ArgumentsManager:
                     description='Менеджер паролей с надёжным шифрованием')
         
         self.ArgumentInitialization()
-
-        self.args = self.parser.parse_args()
         
+        self.args = self.parser.parse_args()
+
         self.CheckingArguments()
 
     def ArgumentInitialization(self):
@@ -27,7 +27,8 @@ class ArgumentsManager:
         self.parser.add_argument('-gr', '--get-resource', action='store_true', help='Получить секрет из ресурса профиля.')
         self.parser.add_argument('-lr', '--list-resource', action='store_true', help='Выводит список всех добавленных ресурсов профиля.')
         self.parser.add_argument('-rr', '--remove-resource', action='store_true', help='Удаляет выбранный ресурс профиля.')
-        self.parser.add_argument('-er', '--edit-resource', action='store_true', help='Применяется для редактирования ресурса')
+        self.parser.add_argument('-er', '--edit-resource', action='store_true', help='Применяется для редактирования ресурса.')
+        self.parser.add_argument('-chp', '--change-passphrase', action='store_true', help='Позволяет изменить парольную фразу профиля.')
 
         self.parser.add_argument('-p', '--profile', default=None, type=str, help='Указыват рабочий профиль')
         self.parser.add_argument('-r', '--resource', default=None, type=str, help='Указывается в случае работы с записью на ресурс.')
@@ -61,6 +62,9 @@ class ArgumentsManager:
 
         elif self.args.edit_resource and self.ProfileCheck() and self.ResourceCheck():
             self.PM.EditResourceSecret(self.args.profile, self.args.resource)
+
+        elif self.args.change_passphrase and self.ProfileCheck():
+            self.PM.ChangePassphraseProfile(self.args.profile)
 
         elif self.args.generate_password != None:
             self.PM.GeneratePasswords(self.args.generate_password)

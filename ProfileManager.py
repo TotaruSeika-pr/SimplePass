@@ -77,7 +77,7 @@ class ProfileManager:
                             encrypt_data = self.CM.EncryptAES256(self.CM.DEFAULT_PLAINTEXT, self.CM.CreateAESKey(self.SP.DecryptSessionData(passphrase)))
 
                             profile_data['profile']['status'] = 'active'
-                            profile_data['profile']['secrets'].update({'test_text': {'text': encrypt_data[0].hex(), 'salt': encrypt_data[1]}})
+                            profile_data['profile']['secrets'].update({'test_text': {'cipher': encrypt_data[0].hex(), 'salt': encrypt_data[1]}})
 
                             
                             self.SaveProfileData(profile_name, profile_data)
@@ -268,6 +268,54 @@ class ProfileManager:
             else:
                 print('Ресурса с таким именем не существует!')
 
+    def ChangePassphraseProfile(self, profile_name):
+
+        profile_data = self.LoadDataFromProfile(profile_name)
+                
+        if profile_data != False:
+
+            passphrase = self.SP.EncryptSessionData(self.CM.GetPassphrase())
+            checking_out_data, profile_data = self.CheckProfileKey(profile_data, '', passphrase)
+
+            if checking_out_data:
+
+                new_passphrase = self.SP.EncryptSessionData(getpass.getpass('Введите новую парольную фразу: '))
+                check_new_passphrase = self.SP.EncryptSessionData(getpass.getpass('Повторите новую парольную фразу: '))
+
+                if len(self.SP.DecryptSessionData(new_passphrase)) >= 20:
+                    if self.SP.DecryptSessionData(new_passphrase) == self.SP.DecryptSessionData(check_new_passphrase):
+                        
+                        print('Производится процесс замены ключа...')
+
+                        for i in profile_data['profile']['secrets']:
+
+                            new_secret = self.CM.EncryptAES256(self.CM.DecryptAES256(bytes.fromhex(profile_data['profile']['secrets'][i]['cipher']), 
+                                                               self.CM.CreateAESKey(self.SP.DecryptSessionData(passphrase)),
+                                                               profile_data['profile']['secrets'][i]['salt']), 
+                                                        self.CM.CreateAESKey(self.SP.DecryptSessionData(new_passphrase)))
+                            
+                            profile_data['profile']['secrets'][i] = {'cipher': new_secret[0].hex(), 'salt': new_secret[1]}
+
+                        checking_out_data, profile_data = self.CheckProfileKey(profile_data, '', new_passphrase)
+
+                        if checking_out_data:
+
+                            print('Смена ключа произошла успешно!')
+                            self.SaveProfileData(profile_name, profile_data)
+
+                            self.SP.DeleteSessionData()
+                            del profile_data, passphrase, new_passphrase, check_new_passphrase, new_secret
+
+                        else:
+                            print('Неизвестная ошибка при проверке ключа шифрования!')
+                    else:
+                        print('Новые парольные фразы не совпадают!')
+                else:
+                    print('Длинна парольной фразы должна быть больше 20 символов!')
+            else:
+                print('Произошла неизвестная ошибка!')
+                        
+
     def GeneratePasswords(self, data):
 
         passwords = []
@@ -331,7 +379,7 @@ class ProfileManager:
         
     def GetTestData(self, data):
 
-        cipher_text = bytes.fromhex(data['profile']['secrets']['test_text']['text'])
+        cipher_text = bytes.fromhex(data['profile']['secrets']['test_text']['cipher'])
         salt = data['profile']['secrets']['test_text']['salt']
 
         return [cipher_text, salt]
